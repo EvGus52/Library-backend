@@ -1,46 +1,57 @@
 const User = require("../models/user");
+const {
+  handleError,
+  handleNotFound,
+  handleServerError,
+} = require("../utils/errorHandlers");
 
 const getUsers = (request, response) => {
   return User.find({})
     .then((data) => {
-      response.status(200).send(data);
+      response.status(200).json(data);
     })
-    .catch((e) => response.status(500).send(e.message));
+    .catch((e) => handleServerError(e, response));
 };
 
 const getUser = (request, response) => {
   const { user_id } = request.params;
   return User.findById(user_id)
     .then((user) => {
-      response.status(200).send(user);
+      const notFound = handleNotFound(user, response, "User not found");
+      if (notFound) return notFound;
+      response.status(200).json(user);
     })
-    .catch((e) => response.status(500).send(e.message));
+    .catch((e) => handleError(e, response, "User not found"));
 };
 
 const createUser = (request, response) => {
   return User.create({ ...request.body })
     .then((user) => {
-      response.status(201).send(user);
+      response.status(201).json(user);
     })
-    .catch((e) => response.status(500).send(e.message));
+    .catch((e) => handleServerError(e, response));
 };
 
 const updateUser = (request, response) => {
   const { user_id } = request.params;
-  return User.findByIdAndUpdate(user_id, { ...request.body })
+  return User.findByIdAndUpdate(user_id, { ...request.body }, { new: true })
     .then((user) => {
-      response.status(200).send(user);
+      const notFound = handleNotFound(user, response, "User not found");
+      if (notFound) return notFound;
+      response.status(200).json(user);
     })
-    .catch((e) => response.status(500).send(e.message));
+    .catch((e) => handleError(e, response, "User not found"));
 };
 
 const deleteUser = (request, response) => {
   const { user_id } = request.params;
-  return User.findByIdAndDelete(user_id, { ...request.body })
+  return User.findByIdAndDelete(user_id)
     .then((user) => {
-      response.status(200).send("Success");
+      const notFound = handleNotFound(user, response, "User not found");
+      if (notFound) return notFound;
+      response.status(200).json({ message: "Success" });
     })
-    .catch((e) => response.status(500).send(e.message));
+    .catch((e) => handleError(e, response, "User not found"));
 };
 
 module.exports = {
